@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -e
+
+unbuffer()
+# Using GNU coreutils stdbuf command (in new enough, versions 8+)
+{
+  stdbuf -oL -eL "$@"
+}
+
+watch_main()
+{
+  acpi_listen | unbuffer awk '{
+    tstamp = systime();
+    tstr = strftime("%c", tstamp);
+    printf("%16s %s %s\n", tstamp, tstr, $0);
+  }'
+}
+
+: ${ACPI_WATCH_LOGDIR:=/tmp}
+
+#exec 1>> "${ACPI_WATCH_LOGDIR}/acpi_watch.$(date '+%s')"
+
+watch_main
