@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# To see an existing changelog, use this tool
+# To see changelog of the newest package, use
+#    $ apt-get changelog <packagename>
+
+current_changelog () {
+  PACKAGE=${1:?Package name must be given}
+
+  if [ ! -d "/usr/share/doc/$PACKAGE" ]; then
+    echo "Missing changelog or invalid package name: $PACKAGE" >&2
+    return 2
+  fi
+
+  zless "/usr/share/doc/$PACKAGE/changelog.Debian.gz"
+}
+
+
+current_changelog "$1"

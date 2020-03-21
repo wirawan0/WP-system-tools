@@ -1,0 +1,5 @@
+#!/bin/sh
+
+xflock4
+sleep 0.25s
+xfce4-session-logout -s
