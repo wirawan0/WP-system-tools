@@ -37,7 +37,7 @@ device_is_set=
 
 
 # Program names
-HDPARM="echo hdparm"
+HDPARM="hdparm"
 
 
 parse_args ()
