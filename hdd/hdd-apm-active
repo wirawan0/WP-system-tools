@@ -1,0 +1,106 @@
+#!/bin/bash
+#
+# hdd-apm-set.sh
+# Temporarily set APM value of a hard drive
+#
+# Created: 2020-06-26
+# Wirawan Purwanto
+#
+# This tool is useful for setting APM value to a higher one
+# while we plan to do much work involvin the disk.
+# With this tool, the HDD head can be prevented to park prematurely
+# or too frequently, which is not healthy in the long term.
+#
+
+# TODO:
+# - allow conversion from common units (s, m, h, d for secs, mins, hours, days
+# - read current status from smartctl if that command exists)
+
+set -e
+
+: ${DEVICE:=/dev/sda}
+: ${REFRESH_INTERVAL:=15m}
+
+# Maximum "set" time of the HDD in the high APM state.
+# Expressed in units of seconds.
+: ${HDD_APM_UPTIME:=3600}
+HDD_APM_UPTIME_DEFAULT=3600
+
+# The APM power level during the "set" time period
+: ${HDD_APM_SET:=225}
+
+# The APM power level to apply after the "set" time period expires
+# By default set to 127 
+: ${HDD_APM_UNSET:=127}
+
+device_is_set=
+
+
+# Program names
+HDPARM="echo hdparm"
+
+
+parse_args ()
+{
+    local has_device=
+    while [ $# -gt 0 ]; do
+	arg="$1"
+	case "$arg" in
+        (r=*|refresh=*|--refresh=*)
+            REFRESH_INTERVAL="${arg#*=}"
+            ;;
+        (s=*|set=*|--set=*)
+            HDD_APM_SET="${arg#*=}"
+            ;;
+        (u=*|unset=*|--unset=*)
+            HDD_APM_UNSET="${arg#*=}"
+            ;;
+        (t=*|time=*|--time=*)
+            HDD_APM_UPTIME="${arg#*=}"
+            ;;
+        (*=*)
+            echo "Unknown argument: $arg" >&2
+            ;;
+        (-*)
+            echo "Unknown argument: $arg" >&2
+            ;;
+        (*)
+            if [ "$device_is_set" ]; then
+                echo "Error: only one device is allowed." >&2
+                exit 1
+            fi
+            device_is_set=yes
+            DEVICE="$arg"
+            ;;
+        esac
+        shift
+    done
+
+
+    # Validate some args
+    declare -i HDD_APM_UPTIME="$HDD_APM_UPTIME"
+    if (( HDD_APM_UPTIME <= 0 )); then
+        echo "Warning: HDD_APM_UPTIME is not positive; forcing default value $HDD_APM_UPTIME_DEFAULT" >&2
+        HDD_APM_UPTIME="$HDD_APM_UPTIME_DEFAULT"
+    fi
+}
+
+
+apm_uptime_loop ()
+{
+    local start_time="$(date +'%s')"
+    local cur_time
+    local stop_time=$(( start_time + HDD_APM_UPTIME ))
+    $HDPARM  -B "$HDD_APM_SET"  "$DEVICE"
+    cur_time=$(date +'%s')
+    while (( cur_time < stop_time )); do
+        sleep "$REFRESH_INTERVAL"
+        $HDPARM  -B "$HDD_APM_SET"  "$DEVICE"
+        cur_time=$(date +'%s')
+    done
+    $HDPARM  -B "$HDD_APM_UNSET"  "$DEVICE"
+}
+
+
+parse_args "$@"
+apm_uptime_loop
