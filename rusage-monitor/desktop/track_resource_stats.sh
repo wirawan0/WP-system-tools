@@ -3,6 +3,7 @@
 # Polls all the resource usage stats and poll them periodically
 # This combines "track-XXX-mem-usage.sh" and "get_usage.sh"
 # and polls them periodically.
+#
 
 set -e
 
@@ -35,7 +36,12 @@ get_usage_complete () {
 
     ps fuxa > "ps-fuxa-$statkey.txt"
 
-    cat "ps-fuxa-$statkey.txt" | grep Xorg > "Xorg-usage-$statkey.txt"
+    # FIXME for grep below--abspath is not the way to go
+    # because Xorg may be located somewhere else.
+    # We need to exclude earlyoom's arg which includes the word "Xorg"
+    # Something better can be done with awk by sequentially scannint
+    # the tree-like process list.
+    cat "ps-fuxa-$statkey.txt" | grep '/usr/lib/xorg/Xorg' > "Xorg-usage-$statkey.txt"
 
     head *-$statkey.txt
 }
