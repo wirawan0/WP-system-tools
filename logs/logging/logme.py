@@ -10,6 +10,11 @@ Usage: logme.py COMMAND [ARG1 [ARG2 ...]]
 This command itself does not take command-line argument.
 Settings to this program will be fed via environment variables.
 Use script to wrap your local settings.
+
+The purpose of this tool is to log commands during interactive
+sessions (or other types of activities where comprehensive command
+logging is wanted).
+By default only the command + args, the working dir, timestamp (local)
 """
 
 import json
@@ -51,24 +56,24 @@ def logme_run(cmd):
         dict: Log record.
     """
     pwd = os.getcwd()
-    date_str = time.strftime("%Y-%m-%dT%H:%M:%S")
+    date_str = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     # Log the command first
     log_rec = dict(
         cwd=pwd,
         command=list(cmd),
-        timestamp=date_str,
+        time=date_str,
         host=HOSTNAME,
     )
     log_str = yaml.dump([log_rec])
     with open(LOG_FILE, "a") as LF:
         LF.write(log_str)
     ret_code = subprocess.call(cmd, shell=False)
-    log_rec['ret_code'] = ret_code
+    log_rec['return'] = ret_code
 
     # FIXME: This is a terrible hack to add the return code
     # after the fact!
     with open(LOG_FILE, "a") as LF:
-        LF.write("  ret_code: {:d}\n".format(ret_code))
+        LF.write("  return: {:d}\n".format(ret_code))
 
     return log_rec
 
@@ -86,4 +91,4 @@ if (__name__ == "__main__") and not IN_IPYTHON:
         sys.exit(0)
 
     rslt = logme_run(sys.argv[1:])
-    sys.exit(rslt['ret_code'])
+    sys.exit(rslt['return'])
