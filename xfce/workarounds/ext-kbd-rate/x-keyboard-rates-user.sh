@@ -30,6 +30,7 @@ get_keyboard_settings () {
 
 apply_keyboard_settings () {
   if [ $# -eq 2 ]; then
+    Log "apply_keyboard_settings: /usr/bin/xset r rate $1 $2"
     /usr/bin/xset r rate $1 $2
   else
     return 2
@@ -37,8 +38,10 @@ apply_keyboard_settings () {
 }
 
 Log () {
-  if [ -n "$DEBUG" ]; then
-    echo "$*" # >> /tmp/udev_test_action.$X_USER.log
+  if [ "x$DEBUG" = xfile ]; then
+    echo "$*" >> "${TMPDIR:-/tmp}/udev_test_action.$X_USER.log"
+  elif [ -n "$DEBUG" ]; then
+    echo "$*" >&2
   fi
 }
 
@@ -46,7 +49,7 @@ Log "$ACTION :user: $(date)"
 
 if [ "${ACTION}" = "add" ]
 then
-  sleep 5s
+  sleep 3s
   if is_x_running; then
     if is_user_session_up; then
       KB_SETTINGS=$(get_keyboard_settings) || {
