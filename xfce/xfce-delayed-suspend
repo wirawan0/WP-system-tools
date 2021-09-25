@@ -1,17 +1,28 @@
 #!/bin/sh
 
 MYSELF=$0
+: ${QUIET:=0}
 
 usage () {
     echo "Usage: $MYSELF DELAY_VALUE"
+    echo "Any delay value that is acceptable to the sleep command is acceptable."
 }
 
-if [ -z "$1" ]; then
+if [ -z "$1" -o "$1" = --help ]; then
     usage
     exit 1
 fi
 
-sleep "$1" && \
+DELAY=$1
+if [ 0 -eq "$QUIET" ]; then
+    echo "Computer will sleep after a delay of $DELAY"
+fi
+sleep "$DELAY" || {
+    rc=$?
+    echo "sleep command returns error code $rc" >&2
+    exit $rc
+}
+
 {
     xflock4
     sleep 0.25s
