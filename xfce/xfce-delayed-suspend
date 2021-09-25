@@ -1,0 +1,19 @@
+#!/bin/sh
+
+MYSELF=$0
+
+usage () {
+    echo "Usage: $MYSELF DELAY_VALUE"
+}
+
+if [ -z "$1" ]; then
+    usage
+    exit 1
+fi
+
+sleep "$1" && \
+{
+    xflock4
+    sleep 0.25s
+    xfce4-session-logout --suspend
+}
