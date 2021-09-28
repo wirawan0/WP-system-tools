@@ -1,5 +1,8 @@
 #!/bin/sh
 
+#sleep 0.06s
+#play /usr/share/sounds/sound-icons/cembalo-10.wav
+
 xflock4
-sleep 0.5s
-xfce4-session-logout -s
+sleep 1s
+xfce4-session-logout --suspend
