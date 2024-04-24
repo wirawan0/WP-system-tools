@@ -6,10 +6,35 @@
 # should be minimize in the UNIX world.
 # This script attempts to fix that.
 
+FIND_EXE=find
+
+find_compat_find () {
+    # On MobaXTerm system, the `find` command is problematic
+    # because it was mapped to busybox find.
+    # But for some reason, GNU find is available as `find.exe`,
+    # so we will use that.
+    if [ "$(uname)" = "CYGWIN_NT-10.0-WOW" ]; then
+        # FIXME -- Temporary patch to allow this script to work
+        # under MobaXTerm environment
+        FIND_EXE=/bin/find.exe
+    fi
+
+    if echo "$FIND_EXE" | grep -q "/" ; then
+        if [ ! -x "$FIND_EXE" ]; then
+            echo "Error: cannot find the expected find executable: $FIND_EXE" >&2
+            exit 2
+        fi
+    elif ! which "$FIND_EXE" > /dev/null  2> /dev/null; then
+        echo "Error: cannot find the expected find executable: $FIND_EXE" >&2
+        exit 2
+    fi
+}
+
+
 fix_win_file_perms () {
     # Usage: fix_win_file_perms <DIR>
     local DIR="$1"
-    find "$DIR" -type f \( \
+    "$FIND_EXE"  "$DIR"  -type f \( \
          -iname '*.pdf' \
          -o -iname '*.ps' \
 	 \
@@ -80,5 +105,6 @@ fix_win_file_perms () {
 }
 
 
+find_compat_find
 fix_win_file_perms  "${1:?Target subdir tree is required as arg 1}"
 
