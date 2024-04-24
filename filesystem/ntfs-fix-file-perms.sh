@@ -45,6 +45,7 @@ fix_win_file_perms () {
          -o -iname '*.xls' \
          -o -iname '*.xlsx' \
          \
+         -o -iname '*.odg' \
          -o -iname '*.odp' \
          -o -iname '*.ods' \
          -o -iname '*.odt' \
@@ -53,6 +54,7 @@ fix_win_file_perms () {
          -o -iname '*.html' \
          -o -iname '*.md' \
          -o -iname '*.txt' \
+         -o -iname '*.xml' \
          -o -iname '*.yaml' \
          -o -iname '*.yml' \
          \
@@ -65,6 +67,7 @@ fix_win_file_perms () {
          -o -iname '*.f90' \
          -o -iname '*.F90' \
          -o -iname '*.js' \
+         -o -iname '*.js.download' \
          -o -iname '*.ipynb' \
          \
          -o -iname '*~' \
@@ -81,14 +84,18 @@ fix_win_file_perms () {
          -o -iname '*.xz' \
          -o -iname '*.zip' \
          \
+         -o -iname '*.heif' \
          -o -iname '*.gif' \
          -o -iname '*.jpeg' \
          -o -iname '*.jpg' \
          -o -iname '*.png' \
          -o -iname '*.svg' \
+         -o -iname '*.tif' \
+         -o -iname '*.tiff' \
          \
          -o -iname '*.3gp' \
          -o -iname '*.3gpp' \
+         -o -iname '*.avi' \
          -o -iname '*.mov' \
          -o -iname '*.mp2' \
          -o -iname '*.mp3' \
