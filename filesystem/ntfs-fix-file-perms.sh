@@ -9,7 +9,7 @@
 fix_win_file_perms () {
     # Usage: fix_win_file_perms <DIR>
     local DIR="$1"
-    find "$DIR" \( \
+    find "$DIR" -type f \( \
          -iname '*.pdf' \
          -o -iname '*.ps' \
 	 \
@@ -73,8 +73,10 @@ fix_win_file_perms () {
          -o -iname '*.webp' \
          \) \
 	 \
+         -perm /u+x,g+x,o+x \
+	 \
          -print0 \
-         | xargs -0 chmod 644
+         | xargs -0 chmod ${VERBOSE:+-v} 644
 }
 
 
