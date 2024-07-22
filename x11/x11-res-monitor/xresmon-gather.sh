@@ -13,10 +13,15 @@
 
 
 
-: ${XRESMON_LOGDIR:=dump}
+: ${XRESMON_LOGDIR:="dump"}
 : ${XRESMON_DISPLAY:=":0"}
 
-TRACK_PS_XORG=${XRESMON_LOGDIR}/track-Xorg-mem-usage.txt
+: ${XRESMON_MODE:=legacy}
+
+# Adjustable collection timing for "mode1"
+: ${XRESMON_MODE1_INTERVAL_BASIC:="1m"}
+: ${XRESMON_MODE1_INTERVAL_COMPLETE:="30m"}
+
 
 # This one tracks the total memory usage of Xorg
 track_usage_1() {
@@ -50,6 +55,12 @@ get_usage_complete () {
 }
 
 
+# Check "stop" flag: returns zero if a file named "STOP" is found
+# in the dump directory:
+flagged_stop () {
+    test -f "$XRESMON_LOGDIR/stop"
+}
+
 XORG_PID=$(
     ps fuxa \
         | awk '/\/usr\/lib\/xorg\/Xorg -core '"$XRESMON_DISPLAY"'/ \
@@ -70,20 +81,85 @@ if [ ! -d "$XRESMON_LOGDIR" ]; then
     mkdir -p "$XRESMON_LOGDIR"
 fi
 
-# FIXME: Still hardwired:
+TRACK_PS_XORG=${XRESMON_LOGDIR}/track-Xorg-mem-usage.txt
+
+
+# Legacy loop: All hardwired, designed for very long time
+# data collection
 # * poll very basic xorg memory usage every minute
 # * poll complete usage every minute HH:00 and HH:30
-while true; do
-    (
-        STAT_KEY=$(date +"%Y%m%dT%H%M")
-        track_usage_1 "$XORG_PID" >> "$TRACK_PS_XORG"
+main_loop_legacy () {
+    while true; do
+        (
+            STAT_KEY=$(date +"%Y%m%dT%H%M")
+            track_usage_1 "$XORG_PID" >> "$TRACK_PS_XORG"
 
-        case "$STAT_KEY" in
-        (*00|*30)
+            case "$STAT_KEY" in
+            (*00|*30)
+                cd "$XRESMON_LOGDIR"
+                get_usage_complete "$STAT_KEY"
+                ;;
+            esac
+            sleep 1m
+        )
+        if flagged_stop; then
+            echo "Exiting main_loop_legacy" >&2
+            break
+        fi
+    done
+}
+
+
+# Smaller loops -- not tied to absolute minute
+# but to the beginning of the run time
+loop_xorg_basic () {
+    local SLEEP_DELAY="${1:-1m}"
+    while true; do
+        (
+            track_usage_1 "$XORG_PID" >> "$TRACK_PS_XORG"
+            sleep "$SLEEP_DELAY"
+        )
+        if flagged_stop; then
+            echo "Exiting loop_xorg_basic" >&2
+            break
+        fi
+    done
+}
+
+loop_xorg_usage_complete () {
+    local SLEEP_DELAY="${1:-30m}"
+    while true; do
+        (
+            STAT_KEY=$(date +"%Y%m%dT%H%M")
             cd "$XRESMON_LOGDIR"
             get_usage_complete "$STAT_KEY"
-            ;;
-        esac
-        sleep 1m
-    )
-done
+            sleep "$SLEEP_DELAY"
+        )
+        if flagged_stop; then
+            echo "Exiting loop_xorg_usage_complete" >&2
+            break
+        fi
+    done
+}
+
+
+main_loop_mode1 () {
+    loop_xorg_basic "$XRESMON_MODE1_INTERVAL_BASIC" &
+    loop_xorg_usage_complete "$XRESMON_MODE1_INTERVAL_COMPLETE" &
+    wait
+}
+
+
+main () {
+    case "$XRESMON_MODE" in
+    (legacy|0)
+        main_loop_legacy
+        ;;
+    (1)
+        main_loop_mode1
+        ;;
+    esac
+}
+
+# Call the main function here:
+main
